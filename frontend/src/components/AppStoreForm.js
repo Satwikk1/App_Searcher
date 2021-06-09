@@ -1,6 +1,7 @@
 import axios from 'axios';
-import {useState} from 'react'
-import {InputGroup, Button, FormControl, handleData} from 'react-bootstrap'
+import {useState, useEffect} from 'react'
+import {InputGroup, Button, FormControl, handleData, Spinner} from 'react-bootstrap'
+import Card from './Card/Card'
 
 
 
@@ -15,11 +16,45 @@ const AppStoreForm = () => {
     const [app_id, setApp_id] = useState('')
     // store app_name from form
     const [app_name, setApp_name] = useState('')
+    // store card details fetched from api
+    const [cardDetail, setCardDetail] = useState('');
 
+    // useEffects 
+
+    // update the value of appName and appId when card details are updated
+    useEffect(() => {
+        setApp_name(cardDetail.trackName)
+        setApp_id(cardDetail.trackId)
+    }, [cardDetail])
 
 
 
     // Functions
+
+    // display the loader while fetching the data
+    const displayLoader = ()=>{
+        if(loading){
+            return (
+                <Button variant="primary" disabled>
+                    <Spinner
+                    as="span"
+                    animation="grow"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    />
+                    Loading...
+                </Button>
+            )
+        }
+        else{
+            return (
+                <Button type={"submit"} variant="outline-secondary" id="button-addon2">
+                    Get info
+                </Button>
+            )
+        }
+    }
 
     // handel csrf token
     const set_CSRF_token = ()=>{ 
@@ -27,22 +62,30 @@ const AppStoreForm = () => {
         axios.defaults.xsrfCookieName = "csrftoken";
       }
 
+      // shoten the description
+    const handelDesp = (str)=>{
+        let a = str.slice(0, 200)
+        a = a + "...";
+        return a;
+    }
+
     // handle api requests
     const handleData = (e)=>{
         e.preventDefault();
         set_CSRF_token();
         setLoading(true);
 
-        // var store = require("app-store-scraper");
-        // store.app({id: 553834731}).then(console.log).catch(console.log);
-
         // API CONNECTION TO DJANGO.
         let jsonData = new FormData();
         jsonData.append("appName", app_name);
         jsonData.append("appId", app_id);
         axios.post('appStore/', jsonData).then((res)=>{
-            console.log(res)
+            let json = JSON.parse(res.data)
+            json.description=handelDesp(json.description);
+            setLoading(false)
+            setCardDetail(json)
         }).catch((err)=>{
+            setLoading(false)
             alert(err);
         })
     }
@@ -80,13 +123,12 @@ const AppStoreForm = () => {
                     />
                 </InputGroup>
                 <div className={"container"}>
-                    <Button type={"submit"} variant="outline-secondary" id="button-addon2">
-                        Get info
-                    </Button>
+                    {displayLoader()}
                 </div>
-
-
             </form>
+            <div className={"container"}>
+                {cardDetail!=''? <Card reviews={cardDetail.userRatingCount} ratings={cardDetail.averageUserRating} downloads={" /"} description={cardDetail.description} imgSrc={cardDetail.artworkUrl512} appName={cardDetail.trackCensoredName} developerName={cardDetail.sellerName}/>: null}
+            </div>
         </div>
     )
 }

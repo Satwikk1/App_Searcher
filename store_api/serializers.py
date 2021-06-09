@@ -10,3 +10,7 @@ class PlayStoreSerializer(serializers.Serializer):
 class AppStoreSerializer(serializers.Serializer):
     appName = CharField()
     appId = CharField()
+
+
+class KeywordFindSerializer(serializers.Serializer):
+    url = CharField()
